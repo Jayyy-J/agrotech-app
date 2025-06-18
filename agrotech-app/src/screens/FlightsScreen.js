@@ -1,13 +1,13 @@
 // In agrotech-app/src/screens/FlightsScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Card, FAB, ActivityIndicator, Appbar, Chip, Title } from 'react-native-paper';
+import { Text, Card, FAB, ActivityIndicator, Appbar, Chip, Title, Button } from 'react-native-paper'; // Added Button
 import { useAuth } from '../context/AuthContext';
 import { firestore } from '../config/firebaseConfig';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
 
-const FlightsScreen = ({ navigation }) => {
+const FlightsScreen = ({ navigation }) => { // Ensure navigation is destructured
   const { user, userRole } = useAuth();
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,19 +15,18 @@ const FlightsScreen = ({ navigation }) => {
 
   const fetchFlights = useCallback(() => {
     if (user && userRole === 'operator') {
-      setLoading(true);
+      // setLoading(true); // setLoading only on initial full load, not for snapshot updates if not desired
       const flightsCollectionRef = collection(firestore, 'flights');
       const q = query(
         flightsCollectionRef,
         where('operatorId', '==', user.uid),
-        orderBy('scheduledDate', 'desc') // Sort by newest first
+        orderBy('scheduledDate', 'desc')
       );
 
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const fetchedFlights = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          // Convert Firestore Timestamp to JS Date for display
           scheduledDate: doc.data().scheduledDate?.toDate ? doc.data().scheduledDate.toDate() : null,
         }));
         setFlights(fetchedFlights);
@@ -38,7 +37,7 @@ const FlightsScreen = ({ navigation }) => {
         setLoading(false);
         setRefreshing(false);
       });
-      return unsubscribe; // Return unsubscribe function for cleanup
+      return unsubscribe;
     } else {
       setFlights([]);
       setLoading(false);
@@ -46,26 +45,75 @@ const FlightsScreen = ({ navigation }) => {
     }
   }, [user, userRole]);
 
-  // Use useFocusEffect to re-fetch when the screen comes into focus
-  // and on initial mount. onSnapshot will keep it updated.
   useFocusEffect(
     useCallback(() => {
+      setLoading(true); // Show loader when screen comes into focus before data is ready
       const unsubscribe = fetchFlights();
       return () => {
-        if (unsubscribe) unsubscribe(); // Cleanup listener on blur/unmount
+        if (unsubscribe) unsubscribe();
       };
     }, [fetchFlights])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchFlights(); // This will re-setup the listener if needed or just refresh data
+    fetchFlights();
   };
 
-  if (loading && !refreshing) {
+  const renderFlightItem = ({ item }) => (
+    <Card style={styles.card}>
+      <Card.Title
+        title={`Vuelo: ${item.fieldLocation || 'Ubicación Pendiente'}`}
+        subtitle={`Producto Estimado: ${item.productUsed || 'N/A'}`}
+      />
+      <Card.Content>
+        <Text>Fecha Programada: {item.scheduledDate ? item.scheduledDate.toLocaleDateString() : 'Fecha no especificada'}</Text>
+        <View style={styles.statusContainer}>
+          <Text>Estado: </Text>
+          <Chip
+            icon={item.status === 'completed' ? "check-circle" : item.status === 'scheduled' ? "calendar-clock" : "progress-wrench"}
+            mode="outlined"
+            style={item.status === 'completed' ? styles.chipCompleted : styles.chipScheduled}
+          >
+            {item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : 'Desconocido'}
+          </Chip>
+        </View>
+        <Text>Tiempo Estimado: {item.estimatedTime || 'N/A'}</Text>
+      </Card.Content>
+      {userRole === 'operator' && item.status !== 'completed' && (
+        <Card.Actions>
+          <Button
+            icon="spray-bottle"
+            mode="contained"
+            onPress={() => navigation.navigate('RegisterFumigation', {
+                flightId: item.id,
+                flightProduct: item.productUsed,
+                flightLocation: item.fieldLocation
+            })}
+            style={styles.actionButton}
+          >
+            Registrar Fumigación
+          </Button>
+        </Card.Actions>
+      )}
+       {userRole === 'operator' && item.status === 'completed' && (
+        <Card.Actions>
+          <Button
+            icon="check-all"
+            disabled
+            style={styles.actionButton}
+          >
+            Fumigación Registrada
+          </Button>
+        </Card.Actions>
+      )}
+    </Card>
+  );
+
+  if (loading && !refreshing && flights.length === 0) { // Show loader only if flights are empty and not refreshing
     return (
       <>
-        <Appbar.Header><Appbar.Content title="Mis Vuelos Programados" /></Appbar.Header>
+        <Appbar.Header><Appbar.Content title={userRole === 'operator' ? "Mis Vuelos Programados" : "Vuelos"} /></Appbar.Header>
         <ActivityIndicator animating={true} size="large" style={styles.loader} />
       </>
     );
@@ -83,21 +131,6 @@ const FlightsScreen = ({ navigation }) => {
     );
   }
 
-  const renderFlightItem = ({ item }) => (
-    <Card style={styles.card}>
-      <Card.Title
-        title={`Vuelo: ${item.fieldLocation || 'Ubicación Pendiente'}`}
-        subtitle={`Producto: ${item.productUsed || 'N/A'}`}
-      />
-      <Card.Content>
-        <Text>Fecha: {item.scheduledDate ? item.scheduledDate.toLocaleDateString() : 'Fecha no especificada'}</Text>
-        <Text>Estado: <Chip icon="information" mode="outlined">{item.status}</Chip></Text>
-        <Text>Tiempo Estimado: {item.estimatedTime || 'N/A'}</Text>
-      </Card.Content>
-      {/* Add actions like view details or edit later */}
-    </Card>
-  );
-
   return (
     <>
       <Appbar.Header>
@@ -107,6 +140,7 @@ const FlightsScreen = ({ navigation }) => {
         {flights.length === 0 && !loading ? (
           <View style={styles.centeredMessage}>
              <Text>No tienes vuelos programados.</Text>
+             <Text style={{marginTop: 8}}>Puedes registrar uno usando el botón (+).</Text>
           </View>
         ) : (
           <FlatList
@@ -134,8 +168,12 @@ const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   fab: { position: 'absolute', margin: 16, right: 0, bottom: 0 },
   card: { marginHorizontal: 16, marginVertical: 8 },
-  listContent: { paddingBottom: 80 }, // To avoid FAB overlapping last item
-  centeredMessage: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, textAlign: 'center' }
+  listContent: { paddingBottom: 80 },
+  centeredMessage: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, textAlign: 'center' },
+  statusContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 4 },
+  chipScheduled: { backgroundColor: '#fff8e1', borderColor: '#ffe082' },
+  chipCompleted: { backgroundColor: '#e8f5e9', borderColor: '#a5d6a7' },
+  actionButton: { flex: 1, marginHorizontal: 8 }
 });
 
 export default FlightsScreen;

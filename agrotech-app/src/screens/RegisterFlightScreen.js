@@ -1,7 +1,7 @@
 // In agrotech-app/src/screens/RegisterFlightScreen.js
 import React, { useState, useCallback } from 'react';
 import { ScrollView, StyleSheet, View, Alert } from 'react-native';
-import { TextInput, Button, Appbar, Provider as PaperProvider, Text } from 'react-native-paper';
+import { TextInput, Button, Appbar, Text } from 'react-native-paper';
 // Conditional import for date picker
 // import { DatePickerInput } from 'react-native-paper-dates';
 import { useAuth } from '../context/AuthContext';
