@@ -1,0 +1,115 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Expo
+.expo/
+dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android
+android/build/
+android/app/build/
+android/app/.cxx/
+android/app/.externalNativeBuild/
+android/app/debug.keystore
+android/app/release.keystore
+android/app/?*.apk
+android/app/?*.aab
+android/app/src/main/assets/app.manifest
+
+# iOS
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+ios/DerivedData/
+*.hmap
+*.ipa
+
+# Metro Bundler
+.metro-cache/
+
+# Environment variables
+.env
+.env.*
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# Misc
+coverage/
+*.log
+*.lock
+*.DS_Store
+*.patch
+*.rej
+*.orig
+*.swo
+*.swp
+*.bak
+*.tmp
+
+# Web
+.web-build/
+web-build/
+web-report/
+public/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Buck
+buck-out/
+\.buckd/
+*.keystore
+!android/app/build/outputs/bundle/release/app-release.aab
+
+# Firebase
+firebase-debug.log
+
+# Sentry
+*.sentryclirc
+.sentryclirc
+sentry.properties
+
+# Detox (e2e testing)
+artifacts/
+e2e/__snapshots__/
+e2e/videos/
+e2e/screenshots/
+e2e/detox.log
+e2e/jest.out.json
+
+# EAS
+.eas/
+eas-build-pre-upload.tar.gz
+eas-build-post-upload.tar.gz
+eas-update-build-pre.tar.gz
+eas-update-build-post.tar.gz
+eas-builds-temp-storage/
+dist.tar.gz
+build_output.json
+output.json
+output.xcarchive.tar.gz
+output.app.tar.gz
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
